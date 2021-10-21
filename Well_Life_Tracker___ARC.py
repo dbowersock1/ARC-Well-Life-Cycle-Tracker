@@ -11,9 +11,14 @@ def main():
 	
 	# Creates a dictionary of UWIs from the passed worksheet
 	listOfWells = {}
+	# df['UWI'] is a dataframe series
+	# Note that the code below cycles through all the entry points, regardless of duplicate entries! Fix
 	for i in df['UWI']:
 		listOfWells[i] = Well(i)
-		print(listOfWells[i].UWI)
+
+	for key in listOfWells:
+		print(listOfWells[key].UWI)
+
 	print("End")
 
 class Well: 
