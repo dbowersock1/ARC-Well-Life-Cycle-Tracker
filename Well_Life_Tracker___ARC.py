@@ -2,8 +2,6 @@ import sys
 import pandas as pd
 import openpyxl
 
-
-
 def main():
 	# Creates data frame from a passed excel file
 	df = pd.read_excel(r'C:\Users\dbowe\source\repos\Well Life Tracker - ARC\job history - 15-36 pad.xlsx')
@@ -28,6 +26,9 @@ def main():
 	# Prints number of wells to console, as a check 
 	for i in listOfWells:
 		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs!")
+		
+	# Returns average Run Days - Currently working on this!
+	print(listOfWells["102/02-12-066-25W5/00"].averageRunTime())
 
 	print("End")
 
@@ -46,6 +47,38 @@ class Well:
 			"endDate" : dfSeries["End Date"]
 			}
 		self.wrkArray.append(jobDict)
+
+	def averageRunTime(self):
+		wellServicingCount = 0
+		avgCount = 0
+		avg = 0
+		lastWrkDate = 0
+		diff = []
+		#populates array of diff
+		for job in self.wrkArray:
+			if job["jobCategory"]=="Well Servicing":
+				wellServicingCount += 1 
+				if lastWrkDate == 0 :
+					lastWrkDate = job["startDate"]
+				else: 
+					diffn = job["startDate"] - lastWrkDate
+					diff.append(diffn)
+					lastWrkDate = job["startDate"]
+					avgCount += 1 
+			else: 
+				continue
+		# calculates average
+		sumDays = 0
+		for date in diff:
+			dateInt = date.days
+			sumDays += dateInt
+		avg = sumDays / avgCount
+			
+		print (f"The number of Well Servicing WRKs for {self.UWI} is {wellServicingCount} and the average run time is {avg}")
+		
+
+
+
 
 if __name__ == "__main__":
 	main()
