@@ -22,21 +22,22 @@ def main():
 	# Adds jobs to each well Object
 	for index, row in df.iterrows():
 		listOfWells[row["UWI"]].addJob(row)
-
-	# Prints number of wells to console, as a check 
-	for i in listOfWells:
-		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs!")
 		
-	# Returns average Run Days - Currently working on this!
-	print(listOfWells["102/02-12-066-25W5/00"].averageRunTime())
+	# Calculates avg Run Life for all Wells
+	for i in listOfWells:
+		listOfWells[i].averageRunTime()
 
-	print("End")
+		# Prints number of wells to console, as a check 
+	for i in listOfWells:
+		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs! This well has an average run life of {listOfWells[i].runLife}")
+		print ("End")
 
 class Well: 
 	def __init__(self, UWI):
 		self.UWI = UWI
 		self.numOfJobs=0
 		self.wrkArray = []
+		self.runLife = 0
 
 	def addJob(self, dfSeries):
 		self.numOfJobs+=1
@@ -73,13 +74,9 @@ class Well:
 			dateInt = date.days
 			sumDays += dateInt
 		avg = sumDays / avgCount
-			
-		print (f"The number of Well Servicing WRKs for {self.UWI} is {wellServicingCount} and the average run time is {avg}")
+		self.runLife = round(avg)
 		
-
-
-
-
+		
 if __name__ == "__main__":
 	main()
 
