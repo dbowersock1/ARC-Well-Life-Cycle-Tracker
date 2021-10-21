@@ -5,26 +5,29 @@ import openpyxl
 
 
 def main():
+	# Creates data frame from a passed excel file
 	df = pd.read_excel(r'C:\Users\dbowe\source\repos\Well Life Tracker - ARC\job history - 15-36 pad.xlsx')
-	# Comment below, stops the print from mincing rows & columns
-	# pd.set_option('display.max_rows', None, 'display.max_columns', None)
 	
 	# Creates a dictionary of UWIs from the passed worksheet
 	listOfWells = {}
-	# df['UWI'] is a dataframe series
-	# Note that the code below cycles through all the entry points, regardless of duplicate entries! Fix
-	# Would be nice to iterate through the entire sheet once!
+	uniqueWells = set()
+
+	# Generates list of unique wells from the excel (data frame)
+	# df['UWI'] is a data frame series
 	for i in df['UWI']:
+		uniqueWells.add(i)
+
+	# Creates Well Objects for each unique UWI
+	for i in uniqueWells:
 		listOfWells[i] = Well(i)
 
-	for key in listOfWells:
-		print(listOfWells[key].UWI)
+	# Adds jobs to each well Object
+	for index, row in df.iterrows():
+		listOfWells[row["UWI"]].addJob(row)
 
-	# adds job to individual UWI
-	print(listOfWells["102/02-12-066-25W5/00"])
-	print(df.loc[0])
-	listOfWells["102/02-12-066-25W5/00"].addJob(df.loc[0])
-	print(listOfWells["102/02-12-066-25W5/00"].numOfJobs)
+	# Prints number of wells to console, as a check 
+	for i in listOfWells:
+		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs!")
 
 	print("End")
 
