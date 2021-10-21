@@ -29,8 +29,11 @@ def main():
 
 		# Prints number of wells to console, as a check 
 	for i in listOfWells:
-		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs! This well has an average run life of {listOfWells[i].runLife}")
-		print ("End")
+		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs! This well has an average run life of {listOfWells[i].runLife}.")
+		print (f"It has been {listOfWells[i].currentRunLife} days without a failure!")
+		print()
+		
+	print ("End")
 
 class Well: 
 	def __init__(self, UWI):
@@ -38,6 +41,7 @@ class Well:
 		self.numOfJobs=0
 		self.wrkArray = []
 		self.runLife = 0
+		self.currentRunLife = 0
 
 	def addJob(self, dfSeries):
 		self.numOfJobs+=1
@@ -55,12 +59,15 @@ class Well:
 		avg = 0
 		lastWrkDate = 0
 		diff = []
+
 		#populates array of diff
 		for job in self.wrkArray:
 			if job["jobCategory"]=="Well Servicing":
 				wellServicingCount += 1 
+				# populates first WRK date
 				if lastWrkDate == 0 :
 					lastWrkDate = job["startDate"]
+				# Populates diff array so the average can be calculated further down
 				else: 
 					diffn = job["startDate"] - lastWrkDate
 					diff.append(diffn)
@@ -68,6 +75,7 @@ class Well:
 					avgCount += 1 
 			else: 
 				continue
+
 		# calculates average
 		sumDays = 0
 		for date in diff:
@@ -75,8 +83,13 @@ class Well:
 			sumDays += dateInt
 		avg = sumDays / avgCount
 		self.runLife = round(avg)
-		
-		
+
+		#populates currentRunLife
+		a = self.wrkArray[-1]["startDate"]
+		lastWRK = a.to_pydatetime().date()
+		today = (pd.to_datetime("today")).to_pydatetime().date()
+		self.currentRunLife = (today - lastWRK).days
+
 if __name__ == "__main__":
 	main()
 
