@@ -4,23 +4,58 @@ import openpyxl
 import json
 import jsonpickle
 
+# To Do
+# 1) add only unique jobs to well objects!
+
 def main():
+	
+	# ListOfWells is a dictionary of objects. Key = UWI
+	listOfWells = retrieveFile()
+	
+	# Create method that opens excel file & adds any UWIs & Jobs to listOfWells
+	listOfWells = listUpdater(listOfWells)
+
+	# Prints number of wells to console, as a check 
+	for i in listOfWells:
+		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs! This well has an average run life of {listOfWells[i].runLife}.")
+		print (f"It has been {listOfWells[i].currentRunLife} days without a failure!")
+		print()
+	
+	storeFile(listOfWells)
+
+	print ("End")
+
+# Opens data text file, converts from JSON to object, returns 
+def retrieveFile ():
+	with open ('data.txt', 'r') as infile:
+		try:
+			jsonthawed = json.load(infile)
+			thawed = jsonpickle.decode(jsonthawed)
+		except:
+			thawed = {}
+	return thawed
+
+# Opens excel file, stores data in listOfWells Dictionary
+def listUpdater(listOfWells):
+	uniqueWells = []
+	for key in listOfWells:
+		uniqueWells.append(key)
+
 	# Creates data frame from a passed excel file
 	df = pd.read_excel(r'C:\Users\dbowe\source\repos\Well Life Tracker - ARC\job history - 15-36 pad.xlsx')
 	
-	# Creates a dictionary of UWIs from the passed worksheet
-	listOfWells = {}
-	uniqueWells = set()
-
 	# Generates list of unique wells from the excel (data frame)
 	# df['UWI'] is a data frame series
+	excelUniqueWells = set()
 	for i in df['UWI']:
-		uniqueWells.add(i)
+		excelUniqueWells.add(i)
 
-	# Creates Well Objects for each unique UWI
-	for i in uniqueWells:
+	# Creates object for any wells not already in file!
+	diff = excelUniqueWells.difference(uniqueWells)
+	for i in diff:
 		listOfWells[i] = Well(i)
 
+	# ! Need to only add new jobs not all the jobs!
 	# Adds jobs to each well Object
 	for index, row in df.iterrows():
 		listOfWells[row["UWI"]].addJob(row)
@@ -29,32 +64,17 @@ def main():
 	for i in listOfWells:
 		listOfWells[i].averageRunTime()
 
-	# Prints number of wells to console, as a check 
-	for i in listOfWells:
-		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs! This well has an average run life of {listOfWells[i].runLife}.")
-		print (f"It has been {listOfWells[i].currentRunLife} days without a failure!")
-		print()
-		
+	return listOfWells
+
+# Updates listOfWells Dictionary back to to the data file
+def storeFile(listOfWells):
 	# Write information to JSON File
 	frozen = jsonpickle.encode(listOfWells)
 	with open('data.txt', 'w') as outfile:
 		json.dump(frozen, outfile)
 
-	# Retreive informtion from JSON File
-	with open ('data.txt', 'r') as infile:
-		jsonthawed = json.load(infile)
-	thawed = jsonpickle.decode(jsonthawed)
 
-	# Print to see if back and forth worked!
-	print("Test to see if file has been encoded and decoded correctly!")
-	print()
-	for i in thawed:
-		print (f"UWI {thawed[i].UWI}, has {thawed[i].numOfJobs} number of jobs! This well has an average run life of {thawed[i].runLife}.")
-		print (f"It has been {thawed[i].currentRunLife} days without a failure!")
-		print()
-
-	print ("End")
-
+# UWI Objects
 class Well: 
 	def __init__(self, UWI):
 		self.UWI = UWI
@@ -107,6 +127,7 @@ class Well:
 		today = (pd.to_datetime("today")).to_pydatetime().date()
 		self.currentRunLife = (today - lastWRK).days
 
+# Boiler plate
 if __name__ == "__main__":
 	main()
 
