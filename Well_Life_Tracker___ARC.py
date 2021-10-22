@@ -1,6 +1,8 @@
 import sys
 import pandas as pd
 import openpyxl
+import json
+import jsonpickle
 
 def main():
 	# Creates data frame from a passed excel file
@@ -27,12 +29,30 @@ def main():
 	for i in listOfWells:
 		listOfWells[i].averageRunTime()
 
-		# Prints number of wells to console, as a check 
+	# Prints number of wells to console, as a check 
 	for i in listOfWells:
 		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs! This well has an average run life of {listOfWells[i].runLife}.")
 		print (f"It has been {listOfWells[i].currentRunLife} days without a failure!")
 		print()
 		
+	# Write information to JSON File
+	frozen = jsonpickle.encode(listOfWells)
+	with open('data.txt', 'w') as outfile:
+		json.dump(frozen, outfile)
+
+	# Retreive informtion from JSON File
+	with open ('data.txt', 'r') as infile:
+		jsonthawed = json.load(infile)
+	thawed = jsonpickle.decode(jsonthawed)
+
+	# Print to see if back and forth worked!
+	print("Test to see if file has been encoded and decoded correctly!")
+	print()
+	for i in thawed:
+		print (f"UWI {thawed[i].UWI}, has {thawed[i].numOfJobs} number of jobs! This well has an average run life of {thawed[i].runLife}.")
+		print (f"It has been {thawed[i].currentRunLife} days without a failure!")
+		print()
+
 	print ("End")
 
 class Well: 
@@ -59,7 +79,6 @@ class Well:
 		avg = 0
 		lastWrkDate = 0
 		diff = []
-
 		#populates array of diff
 		for job in self.wrkArray:
 			if job["jobCategory"]=="Well Servicing":
@@ -75,7 +94,6 @@ class Well:
 					avgCount += 1 
 			else: 
 				continue
-
 		# calculates average
 		sumDays = 0
 		for date in diff:
@@ -83,7 +101,6 @@ class Well:
 			sumDays += dateInt
 		avg = sumDays / avgCount
 		self.runLife = round(avg)
-
 		#populates currentRunLife
 		a = self.wrkArray[-1]["startDate"]
 		lastWRK = a.to_pydatetime().date()
