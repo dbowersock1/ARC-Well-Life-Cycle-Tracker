@@ -6,8 +6,7 @@ import jsonpickle
 from operator import itemgetter
 
 # To Do
-# Need to change how average days are calculated!
-# Function test - split apart excel into 2 files and see if it can handle it!
+# Catch instances where start date is not entered!
 
 def main():
 	
@@ -26,6 +25,9 @@ def main():
 		print()
 	
 	storeFile(listOfWells)
+	
+	# Creates excel file with information
+	createExcel(listOfWells)
 
 	print ("End")
 
@@ -46,7 +48,7 @@ def listUpdater(listOfWells):
 		uniqueWells.append(key)
 
 	# Creates data frame from a passed excel file
-	df = pd.read_excel(r'C:\Users\dbowe\source\repos\Well Life Tracker - ARC\job history - 15-36 pad.xlsx')
+	df = pd.read_excel(r'E:\1-13 Pad.xlsx')
 	
 	# Generates list of unique wells from the excel (data frame)
 	# df['UWI'] is a data frame series
@@ -58,8 +60,7 @@ def listUpdater(listOfWells):
 	diff = excelUniqueWells.difference(uniqueWells)
 	for i in diff:
 		listOfWells[i] = Well(i)
-	liftOfWells = sorted(listOfWells)
-
+	
 	
 	# Adds jobs to each well Object
 	# Checks to ensure jobs are not already populated
@@ -75,12 +76,9 @@ def listUpdater(listOfWells):
 				listOfWells[row["UWI"]].addJob(row)
 			else:
 				continue
-		
 	# Calculates avg Run Life for all Wells
-	#! Need to change run life calculation. Curent run life calculates when new days are added!
 	for i in listOfWells:
 		listOfWells[i].averageRunTime()
-
 	return listOfWells
 
 # Updates listOfWells Dictionary back to to the data file
@@ -89,6 +87,16 @@ def storeFile(listOfWells):
 	frozen = jsonpickle.encode(listOfWells)
 	with open('data.txt', 'w') as outfile:
 		json.dump(frozen, outfile)
+
+def createExcel (listOfWells):
+	dictToExport = {}
+	columns = ["Avg Run Life", "Days Since Failure", "Last WRK"]
+	for i in listOfWells:
+		dictToExport[i] = [listOfWells[i].runLife, listOfWells[i].currentRunLife, listOfWells[i].wrkArray[-1]["startDate"]]
+	df = pd.DataFrame(dictToExport, index = columns)
+	df.to_excel(r"C:\Users\dbowe\source\repos\Well Life Tracker - ARC\datacollection.xlsx")
+	
+	
 
 
 # UWI Objects
