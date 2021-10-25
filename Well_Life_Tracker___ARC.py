@@ -7,6 +7,7 @@ from operator import itemgetter
 
 # To Do
 # Catch instances where start date is not entered!
+# Catch instances where there is no database plugged in (no need to update)
 
 def main():
 	
