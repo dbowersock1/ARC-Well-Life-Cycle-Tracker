@@ -3,8 +3,10 @@ import pandas as pd
 import openpyxl
 import json
 import jsonpickle
+from operator import itemgetter
 
 # To Do
+# Need to change how average days are calculated!
 # Function test - split apart excel into 2 files and see if it can handle it!
 
 def main():
@@ -17,8 +19,10 @@ def main():
 
 	# Prints number of wells to console, as a check 
 	for i in listOfWells:
+		lastWrkDate=listOfWells[i].wrkArray[-1]["startDate"]
 		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs! This well has an average run life of {listOfWells[i].runLife}.")
 		print (f"It has been {listOfWells[i].currentRunLife} days without a failure!")
+		print (f"The last wrk was on {lastWrkDate}")
 		print()
 	
 	storeFile(listOfWells)
@@ -54,6 +58,7 @@ def listUpdater(listOfWells):
 	diff = excelUniqueWells.difference(uniqueWells)
 	for i in diff:
 		listOfWells[i] = Well(i)
+	liftOfWells = sorted(listOfWells)
 
 	
 	# Adds jobs to each well Object
@@ -72,6 +77,7 @@ def listUpdater(listOfWells):
 				continue
 		
 	# Calculates avg Run Life for all Wells
+	#! Need to change run life calculation. Curent run life calculates when new days are added!
 	for i in listOfWells:
 		listOfWells[i].averageRunTime()
 
@@ -105,12 +111,15 @@ class Well:
 		self.wrkArray.append(jobDict)
 
 	def averageRunTime(self):
+		# Values used in logic
 		wellServicingCount = 0
 		avgCount = 0
 		avg = 0
 		lastWrkDate = 0
 		diff = []
-		#populates array of diff
+		# sorts wrkArray based on start date. Logic requires this.
+		self.wrkArray= sorted(self.wrkArray, key = itemgetter('startDate'))
+		# calculates and populates wrk Array in well object
 		for job in self.wrkArray:
 			if job["jobCategory"]=="Well Servicing":
 				wellServicingCount += 1 
@@ -125,14 +134,14 @@ class Well:
 					avgCount += 1 
 			else: 
 				continue
-		# calculates average
+		# calculates average and adds value to well object 
 		sumDays = 0
 		for date in diff:
 			dateInt = date.days
 			sumDays += dateInt
 		avg = sumDays / avgCount
 		self.runLife = round(avg)
-		#populates currentRunLife
+		# calculates current run life and adds value to well object
 		a = self.wrkArray[-1]["startDate"]
 		lastWRK = a.to_pydatetime().date()
 		today = (pd.to_datetime("today")).to_pydatetime().date()

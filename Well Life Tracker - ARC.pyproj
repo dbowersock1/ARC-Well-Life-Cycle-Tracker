@@ -23,6 +23,7 @@
     <Compile Include="Well_Life_Tracker___ARC.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="job history - 15-36 pad - half.xlsx" />
     <Content Include="job history - 15-36 pad.xlsx" />
     <Content Include="data.txt" />
   </ItemGroup>
