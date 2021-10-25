@@ -5,7 +5,7 @@ import json
 import jsonpickle
 
 # To Do
-# 1) add only unique jobs to well objects!
+# Function test - split apart excel into 2 files and see if it can handle it!
 
 def main():
 	
@@ -55,10 +55,21 @@ def listUpdater(listOfWells):
 	for i in diff:
 		listOfWells[i] = Well(i)
 
-	# ! Need to only add new jobs not all the jobs!
+	
 	# Adds jobs to each well Object
-	for index, row in df.iterrows():
-		listOfWells[row["UWI"]].addJob(row)
+	# Checks to ensure jobs are not already populated
+	for well in excelUniqueWells:
+		#creates unique list of start dates for each well 
+		uniqueDataFrame = df[df['UWI']==well]
+		uniqueWrkDates = []
+		for i in listOfWells[well].wrkArray:
+			uniqueWrkDates.append(i["startDate"])
+		for index, row in uniqueDataFrame.iterrows():
+			# !checks no identical job, based on start date, is already populated in well
+			if (row["Start Date"] not in uniqueWrkDates):
+				listOfWells[row["UWI"]].addJob(row)
+			else:
+				continue
 		
 	# Calculates avg Run Life for all Wells
 	for i in listOfWells:
