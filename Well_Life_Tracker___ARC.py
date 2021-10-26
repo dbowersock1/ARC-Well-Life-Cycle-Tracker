@@ -7,7 +7,6 @@ from operator import itemgetter
 
 # To Do
 # Catch instances where start date is not entered!
-# Catch instances where there is no database plugged in (no need to update)
 
 def main():
 	
@@ -15,19 +14,21 @@ def main():
 	listOfWells = retrieveFile()
 	
 	# Create method that opens excel file & adds any UWIs & Jobs to listOfWells
+	# Must have link to database or will crash!
 	listOfWells = listUpdater(listOfWells)
 
 	# Prints number of wells to console, as a check 
 	for i in listOfWells:
 		lastWrkDate=listOfWells[i].wrkArray[-1]["startDate"]
-		print (f"UWI {listOfWells[i].UWI}, has {listOfWells[i].numOfJobs} number of jobs! This well has an average run life of {listOfWells[i].runLife}.")
+		print (f"UWI {listOfWells[i].UWI} on Pad {listOfWells[i].pad}, has had {listOfWells[i].wellServicingJobs} WS Jobs! This well has an average run life of {listOfWells[i].runLife}.")
 		print (f"It has been {listOfWells[i].currentRunLife} days without a failure!")
 		print (f"The last wrk was on {lastWrkDate}")
 		print()
 	
+	# Stores well database in json file
 	storeFile(listOfWells)
 	
-	# Creates excel file with information
+	# Creates excel file 
 	createExcel(listOfWells)
 
 	print ("End")
@@ -49,7 +50,7 @@ def listUpdater(listOfWells):
 		uniqueWells.append(key)
 
 	# Creates data frame from a passed excel file
-	df = pd.read_excel(r'E:\1-13 Pad.xlsx')
+	df = pd.read_excel(r'E:\2-2 Pad.xlsx')
 	
 	# Generates list of unique wells from the excel (data frame)
 	# df['UWI'] is a data frame series
@@ -91,26 +92,27 @@ def storeFile(listOfWells):
 
 def createExcel (listOfWells):
 	dictToExport = {}
-	columns = ["Avg Run Life", "Days Since Failure", "Last WRK"]
+	columns = ["Avg Run Life", "Days Since Failure", "Last WRK", "Num of WS Jobs"]
 	for i in listOfWells:
-		dictToExport[i] = [listOfWells[i].runLife, listOfWells[i].currentRunLife, listOfWells[i].wrkArray[-1]["startDate"]]
+		dictToExport[i] = [listOfWells[i].runLife, listOfWells[i].currentRunLife, listOfWells[i].wrkArray[-1]["startDate"], listOfWells[i].wellServicingJobs]
 	df = pd.DataFrame(dictToExport, index = columns)
 	df.to_excel(r"C:\Users\dbowe\source\repos\Well Life Tracker - ARC\datacollection.xlsx")
+	df.to_excel(r"E:\datacollection.xlsx")
 	
-	
-
-
 # UWI Objects
 class Well: 
 	def __init__(self, UWI):
 		self.UWI = UWI
+		self.pad = ""
 		self.numOfJobs=0
+		self.wellServicingJobs=0
 		self.wrkArray = []
 		self.runLife = 0
 		self.currentRunLife = 0
 
 	def addJob(self, dfSeries):
 		self.numOfJobs+=1
+		self.pad = dfSeries["Pad Name"]
 		jobDict = { 
 			"jobCategory" : dfSeries["Job Category"],
 			"primaryJobType": dfSeries["Primary Job Type"] ,
@@ -143,6 +145,7 @@ class Well:
 					avgCount += 1 
 			else: 
 				continue
+		self.wellServicingJobs=wellServicingCount
 		# calculates average and adds value to well object 
 		sumDays = 0
 		for date in diff:
