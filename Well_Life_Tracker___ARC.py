@@ -3,33 +3,33 @@ import pandas as pd
 import openpyxl
 import json
 import jsonpickle
+import datetime
 from operator import itemgetter
 
 # To Do
-# Catch instances where start date is not entered!
 
 def main():
 	
 	# ListOfWells is a dictionary of objects. Key = UWI
 	listOfWells = retrieveFile()
 	
+	# The scope below is for updating the well list!!
 	# Create method that opens excel file & adds any UWIs & Jobs to listOfWells
 	# Must have link to database or will crash!
-	listOfWells = listUpdater(listOfWells)
-
+	### linkImport =r'E:\2-2 Pad.xlsx'
+	## listOfWells = listUpdater(listOfWells, linkImport)
 	# Prints number of wells to console, as a check 
-	for i in listOfWells:
-		lastWrkDate=listOfWells[i].wrkArray[-1]["startDate"]
-		print (f"UWI {listOfWells[i].UWI} on Pad {listOfWells[i].pad}, has had {listOfWells[i].wellServicingJobs} WS Jobs! This well has an average run life of {listOfWells[i].runLife}.")
-		print (f"It has been {listOfWells[i].currentRunLife} days without a failure!")
-		print (f"The last wrk was on {lastWrkDate}")
-		print()
-	
+	## for i in listOfWells:
+		## print (f"UWI {listOfWells[i].UWI} on Pad {listOfWells[i].pad}, has had {listOfWells[i].wellServicingJobs} WS Jobs! This well has an average run life of {listOfWells[i].runLife}.")
 	# Stores well database in json file
-	storeFile(listOfWells)
-	
+	## storeFile(listOfWells)
 	# Creates excel file 
-	createExcel(listOfWells)
+	## linkExport = r"E:\datacollection.xlsx"
+	## createExcel(listOfWells, linkExport)
+
+	# The scope below is for more advanced data analysis; namely to calculate the run life average
+	linkExportDailyRunLife = r'E:\datacollection2.xlsx'
+	DailyRunLife(listOfWells, linkExportDailyRunLife) 
 
 	print ("End")
 
@@ -44,13 +44,13 @@ def retrieveFile ():
 	return thawed
 
 # Opens excel file, stores data in listOfWells Dictionary
-def listUpdater(listOfWells):
+def listUpdater(listOfWells, link):
 	uniqueWells = []
 	for key in listOfWells:
 		uniqueWells.append(key)
 
 	# Creates data frame from a passed excel file
-	df = pd.read_excel(r'E:\2-2 Pad.xlsx')
+	df = pd.read_excel(link)
 	
 	# Generates list of unique wells from the excel (data frame)
 	# df['UWI'] is a data frame series
@@ -90,15 +90,39 @@ def storeFile(listOfWells):
 	with open('data.txt', 'w') as outfile:
 		json.dump(frozen, outfile)
 
-def createExcel (listOfWells):
+# Creates excel file w/ pertinent information
+def createExcel (listOfWells, link):
 	dictToExport = {}
 	columns = ["Avg Run Life", "Days Since Failure", "Last WRK", "Num of WS Jobs"]
 	for i in listOfWells:
 		dictToExport[i] = [listOfWells[i].runLife, listOfWells[i].currentRunLife, listOfWells[i].wrkArray[-1]["startDate"], listOfWells[i].wellServicingJobs]
 	df = pd.DataFrame(dictToExport, index = columns)
 	df.to_excel(r"C:\Users\dbowe\source\repos\Well Life Tracker - ARC\datacollection.xlsx")
-	df.to_excel(r"E:\datacollection.xlsx")
+	df.to_excel(link)
 	
+	
+def DailyRunLife(Wells, exportLink):
+	dateArray = []
+	# array of dates
+	# The array indices could be "days ago"
+	# ! need to build in error catching here
+	today = (pd.to_datetime("today")).to_pydatetime().date()
+	for i in range(0, 365*3, 1):
+		dateInIt = today - datetime.timedelta(i)
+		dateArray.append({"date" : dateInIt})
+		for j in Wells:
+			for k in reversed(range(0, len(Wells[j].wrkArray))):
+				wrkDate = Wells[j].wrkArray[k]["startDate"].to_pydatetime().date()
+				if dateInIt > wrkDate: 
+					daysFromWrk = (dateInIt - wrkDate).days
+					dateArray[i][j] = daysFromWrk
+					break
+
+	df=pd.DataFrame(dateArray)
+	df.to_excel(exportLink)
+	
+	
+
 # UWI Objects
 class Well: 
 	def __init__(self, UWI):

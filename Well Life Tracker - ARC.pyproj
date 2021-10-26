@@ -24,8 +24,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="datacollection.xlsx" />
-    <Content Include="job history - 15-36 pad - half.xlsx" />
-    <Content Include="job history - 15-36 pad.xlsx" />
     <Content Include="data.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
