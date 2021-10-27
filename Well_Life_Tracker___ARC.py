@@ -16,20 +16,21 @@ def main():
 	# The scope below is for updating the well list!!
 	# Create method that opens excel file & adds any UWIs & Jobs to listOfWells
 	# Must have link to database or will crash!
-	### linkImport =r'E:\2-2 Pad.xlsx'
-	## listOfWells = listUpdater(listOfWells, linkImport)
+	linkImport =r'E:\all wells ante.xlsx'
+	listOfWells = listUpdater(listOfWells, linkImport)
 	# Prints number of wells to console, as a check 
-	## for i in listOfWells:
-		## print (f"UWI {listOfWells[i].UWI} on Pad {listOfWells[i].pad}, has had {listOfWells[i].wellServicingJobs} WS Jobs! This well has an average run life of {listOfWells[i].runLife}.")
+	for i in listOfWells:
+		print (f"UWI {listOfWells[i].UWI} on Pad {listOfWells[i].pad}, has had {listOfWells[i].wellServicingJobs} WS Jobs! This well has an average run life of {listOfWells[i].runLife}.")
 	# Stores well database in json file
-	## storeFile(listOfWells)
+	storeFile(listOfWells)
 	# Creates excel file 
-	## linkExport = r"E:\datacollection.xlsx"
-	## createExcel(listOfWells, linkExport)
+	linkExport = r"E:\datacollection.xlsx"
+	createExcel(listOfWells, linkExport)
 
 	# The scope below is for more advanced data analysis; namely to calculate the run life average
-	linkExportDailyRunLife = r'E:\datacollection2.xlsx'
-	DailyRunLife(listOfWells, linkExportDailyRunLife) 
+	#! Build in case handling exceptions
+	## linkExportDailyRunLife = r'E:\datacollection2.xlsx'
+	## DailyRunLife(listOfWells, linkExportDailyRunLife) 
 
 	print ("End")
 
@@ -53,19 +54,17 @@ def listUpdater(listOfWells, link):
 	df = pd.read_excel(link)
 	
 	# Generates list of unique wells from the excel (data frame)
-	# df['UWI'] is a data frame series
 	excelUniqueWells = set()
 	for i in df['UWI']:
 		excelUniqueWells.add(i)
 
-	# Creates object for any wells not already in file!
+	# Creates object for any wells not already in data base file!
 	diff = excelUniqueWells.difference(uniqueWells)
 	for i in diff:
 		listOfWells[i] = Well(i)
 	
 	
-	# Adds jobs to each well Object
-	# Checks to ensure jobs are not already populated
+	# Adds jobs to each UWI, if not already populated (works on start date)
 	for well in excelUniqueWells:
 		#creates unique list of start dates for each well 
 		uniqueDataFrame = df[df['UWI']==well]
@@ -93,9 +92,9 @@ def storeFile(listOfWells):
 # Creates excel file w/ pertinent information
 def createExcel (listOfWells, link):
 	dictToExport = {}
-	columns = ["Avg Run Life", "Days Since Failure", "Last WRK", "Num of WS Jobs"]
+	columns = ["Pad", "Avg Run Life", "Days Since Failure", "Last WRK", "Num of WS Jobs"]
 	for i in listOfWells:
-		dictToExport[i] = [listOfWells[i].runLife, listOfWells[i].currentRunLife, listOfWells[i].wrkArray[-1]["startDate"], listOfWells[i].wellServicingJobs]
+		dictToExport[i] = [listOfWells[i].pad, listOfWells[i].runLife, listOfWells[i].currentRunLife, listOfWells[i].wrkArray[-1]["startDate"], listOfWells[i].wellServicingJobs]
 	df = pd.DataFrame(dictToExport, index = columns)
 	df.to_excel(r"C:\Users\dbowe\source\repos\Well Life Tracker - ARC\datacollection.xlsx")
 	df.to_excel(link)
@@ -156,8 +155,11 @@ class Well:
 		self.wrkArray= sorted(self.wrkArray, key = itemgetter('startDate'))
 		# calculates and populates wrk Array in well object
 		for job in self.wrkArray:
+			# Catch
+			if (pd.isnull(job["startDate"])):
+				continue
 			if job["jobCategory"]=="Well Servicing":
-				wellServicingCount += 1 
+				wellServicingCount += 1
 				# populates first WRK date
 				if lastWrkDate == 0 :
 					lastWrkDate = job["startDate"]
@@ -170,18 +172,27 @@ class Well:
 			else: 
 				continue
 		self.wellServicingJobs=wellServicingCount
-		# calculates average and adds value to well object 
+		# Catch 
+		if (wellServicingCount == 0):
+			self.runLife = "Cannot calculate average! There is 0 WS Jobs"
+			self.currentRunLife = "Cannot calculate current run time! There is 0 WS Jobs" 
+			return
+		# Calculates current run life and adds value to well object
+		a = self.wrkArray[-1]["startDate"]
+		lastWRK = a.to_pydatetime().date()
+		today = (pd.to_datetime("today")).to_pydatetime().date()
+		self.currentRunLife = (today - lastWRK).days
+		# Calculates average and adds value to well object 
+		# Catch
+		if (wellServicingCount==1):
+			self.runLife = "Cannot calculate average! Only 1 Well Servicing Job"
+			return
 		sumDays = 0
 		for date in diff:
 			dateInt = date.days
 			sumDays += dateInt
 		avg = sumDays / avgCount
 		self.runLife = round(avg)
-		# calculates current run life and adds value to well object
-		a = self.wrkArray[-1]["startDate"]
-		lastWRK = a.to_pydatetime().date()
-		today = (pd.to_datetime("today")).to_pydatetime().date()
-		self.currentRunLife = (today - lastWRK).days
 
 # Boiler plate
 if __name__ == "__main__":
