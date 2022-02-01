@@ -11,12 +11,11 @@ from operator import itemgetter
 def main():
 	
 	# ListOfWells is a dictionary of objects. Key = UWI
+	# retrieveFile() obtains previous data. Stored in JSON file
 	listOfWells = retrieveFile()
 	
-	# The scope below is for updating the well list!!
-	# Create method that opens excel file & adds any UWIs & Jobs to listOfWells
 	# Must have link to database or will crash!
-	linkImport =r'E:\all wells ante.xlsx'
+	linkImport =r'E:\dataToAnalyzeJobHistory.xlsx'
 	listOfWells = listUpdater(listOfWells, linkImport)
 	# Prints number of wells to console, as a check 
 	for i in listOfWells:
@@ -29,8 +28,8 @@ def main():
 
 	# The scope below is for more advanced data analysis; namely to calculate the run life average
 	#! Build in case handling exceptions
-	## linkExportDailyRunLife = r'E:\datacollection2.xlsx'
-	## DailyRunLife(listOfWells, linkExportDailyRunLife) 
+	linkExportDailyRunLife = r'E:\datacollection2.xlsx'
+	DailyRunLife(listOfWells, linkExportDailyRunLife) 
 
 	print ("End")
 
